@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import styles from "./page.module.css";
 
 type ProductEntry = {
 	sku: string;
@@ -61,7 +60,6 @@ export default function Page() {
 		for (const row of rows) {
 			const rowText = row.textContent || "";
 
-			// Detect category total row (use first <td> only to avoid totals numbers)
 			if (rowText.includes("Total:")) {
 				const firstCellText =
 					row.querySelector("td")?.textContent?.trim() || "";
@@ -98,10 +96,8 @@ export default function Page() {
 		setLoading(false);
 	};
 
-	/* ---------- SKU INDEX ---------- */
 	const buildSKUIndex = (sections: Section[]) => {
 		const index: Record<string, SKUResult[]> = {};
-
 		for (const section of sections) {
 			for (const product of section.products) {
 				(index[product.sku] ??= []).push({
@@ -110,72 +106,80 @@ export default function Page() {
 				});
 			}
 		}
-
 		return index;
 	};
 
 	const handleSearch = () => {
-		const key = sku.trim();
-		setResults(skuIndex[key] || []);
+		setResults(skuIndex[sku.trim()] || []);
 	};
 
 	return (
-		<div className={styles.page}>
-			<header className={styles.header}>
-				<h1 className={styles.title}>SKU Finder</h1>
-				<p className={styles.subtitle}>
-					Upload the HTML report, then search by SKU.
-				</p>
-			</header>
+		<div className="min-h-screen bg-gray-200/50 p-3 pb-20">
+			<div className="mx-auto max-w-md space-y-4">
+				{/* Header */}
+				<header className="space-y-1">
+					<h1 className="text-sm font-semibold text-gray-800">
+						SKU Finder
+					</h1>
+					<p className="text-xs text-gray-600">
+						Upload report and search products by SKU
+					</p>
+				</header>
 
-			<section className={styles.topPanel}>
-				<label className={styles.field}>
-					<span className={styles.label}>Report HTML file</span>
+				{/* Upload */}
+				<section className="rounded border bg-white p-3 space-y-1">
+					<label className="block text-xs text-gray-600">
+						Report HTML file
+					</label>
 					<input
-						className={styles.fileInput}
 						type="file"
 						accept=".html,.htm"
+						className="block w-full text-sm"
 						onChange={(e) => {
 							const file = e.target.files?.[0];
 							if (file) parseHTMLFile(file);
 						}}
 					/>
 					{fileName && (
-						<div className={styles.help}>Loaded: {fileName}</div>
+						<p className="text-xs text-gray-500 truncate">
+							Loaded: {fileName}
+						</p>
 					)}
-				</label>
+					{loading && (
+						<p className="text-xs text-gray-500">Parsing file…</p>
+					)}
+				</section>
 
-				{loading && <div className={styles.loading}>Parsing file…</div>}
-
+				{/* Stats + Search */}
 				{sections.length > 0 && (
-					<>
-						<div className={styles.statsRow}>
-							<div className={styles.stat}>
-								<div className={styles.statLabel}>Sections</div>
-								<div className={styles.statValue}>
+					<section className="space-y-3">
+						<div className="grid grid-cols-3 gap-2 text-center text-xs">
+							<div className="rounded border bg-white p-2">
+								<div className="text-gray-500">Sections</div>
+								<div className="font-medium">
 									{sections.length}
 								</div>
 							</div>
-							<div className={styles.stat}>
-								<div className={styles.statLabel}>Products</div>
-								<div className={styles.statValue}>
+							<div className="rounded border bg-white p-2">
+								<div className="text-gray-500">Products</div>
+								<div className="font-medium">
 									{totalProducts}
 								</div>
 							</div>
-							<div className={styles.stat}>
-								<div className={styles.statLabel}>Matches</div>
-								<div className={styles.statValue}>
+							<div className="rounded border bg-white p-2">
+								<div className="text-gray-500">Matches</div>
+								<div className="font-medium">
 									{results.length}
 								</div>
 							</div>
 						</div>
 
-						<div className={styles.searchRow}>
+						<div className="flex gap-2">
 							<input
-								className={styles.textInput}
 								type="text"
 								inputMode="numeric"
-								placeholder="Enter SKU (numbers only)"
+								placeholder="Enter SKU"
+								className="flex-1 rounded border px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
 								value={sku}
 								onChange={(e) => setSku(e.target.value)}
 								onKeyDown={(e) => {
@@ -183,102 +187,98 @@ export default function Page() {
 								}}
 							/>
 							<button
-								className={styles.primaryButton}
 								onClick={handleSearch}
+								className="rounded bg-blue-600 px-3 py-1 text-sm text-white active:bg-blue-700"
 							>
 								Search
 							</button>
 						</div>
-					</>
+					</section>
 				)}
-			</section>
 
-			<main className={styles.results}>
-				{sections.length > 0 &&
-					!loading &&
-					results.length === 0 &&
-					sku.trim() && (
-						<div className={styles.empty}>
-							No matches found for <b>{sku.trim()}</b>.
-						</div>
-					)}
+				{/* Results */}
+				<main className="space-y-3">
+					{sections.length > 0 &&
+						!loading &&
+						results.length === 0 &&
+						sku.trim() && (
+							<p className="text-xs text-gray-500">
+								No matches found for <b>{sku.trim()}</b>.
+							</p>
+						)}
 
-				{results.map((item, i) => {
-					const cols = item.product.columns;
-					return (
-						<article key={i} className={styles.card}>
-							<div className={styles.cardHeader}>
-								<div className={styles.cardTitleWrap}>
-									<h3 className={styles.cardTitle}>
+					{results.map((item, i) => {
+						const cols = item.product.columns;
+						return (
+							<article
+								key={i}
+								className="rounded border bg-white p-3 space-y-2"
+							>
+								<div className="space-y-0.5">
+									<p className="text-xs font-medium text-gray-700">
 										{item.categoryName}
-									</h3>
-									<div className={styles.cardSubTitle}>
+									</p>
+									<p className="text-sm text-gray-800">
 										{item.product.name}
-									</div>
+									</p>
+									<p className="text-xs text-gray-500">
+										SKU {item.product.sku}
+									</p>
 								</div>
-								<div className={styles.badge}>
-									SKU {item.product.sku}
-								</div>
-							</div>
 
-							<div className={styles.metrics}>
-								<div className={styles.metric}>
-									<div className={styles.metricLabel}>
-										Qty
+								<div className="grid grid-cols-2 gap-2 text-xs">
+									<div className="rounded border p-2">
+										<div className="text-gray-500">Qty</div>
+										<div>{cols[3] ?? "-"}</div>
 									</div>
-									<div className={styles.metricValue}>
-										{cols[3] ?? "-"}
-									</div>
-								</div>
-								<div className={styles.metric}>
-									<div className={styles.metricLabel}>
-										Amount
-									</div>
-									<div className={styles.metricValue}>
-										{cols[4] ?? "-"}
-									</div>
-								</div>
-								<div className={styles.metric}>
-									<div className={styles.metricLabel}>
-										Qty (2)
-									</div>
-									<div className={styles.metricValue}>
-										{cols[7] ?? "-"}
-									</div>
-								</div>
-								<div className={styles.metric}>
-									<div className={styles.metricLabel}>
-										Amount (2)
-									</div>
-									<div className={styles.metricValue}>
-										{cols[8] ?? "-"}
-									</div>
-								</div>
-							</div>
-
-							<details className={styles.details}>
-								<summary className={styles.summary}>
-									All columns
-								</summary>
-
-								<dl className={styles.kvGrid}>
-									{item.product.columns.map((val, idx) => (
-										<div className={styles.kv} key={idx}>
-											<dt className={styles.kvKey}>
-												{COLUMN_LABELS[idx] ??
-													`Col ${idx + 1}`}
-											</dt>
-											<dd className={styles.kvValue}>
-												{val || "-"}
-											</dd>
+									<div className="rounded border p-2">
+										<div className="text-gray-500">
+											Amount
 										</div>
-									))}
-								</dl>
-							</details>
-						</article>
-					);
-				})}
-			</main>
+										<div>{cols[4] ?? "-"}</div>
+									</div>
+									<div className="rounded border p-2">
+										<div className="text-gray-500">
+											Qty (2)
+										</div>
+										<div>{cols[7] ?? "-"}</div>
+									</div>
+									<div className="rounded border p-2">
+										<div className="text-gray-500">
+											Amount (2)
+										</div>
+										<div>{cols[8] ?? "-"}</div>
+									</div>
+								</div>
+
+								<details className="text-xs">
+									<summary className="cursor-pointer text-gray-600">
+										All columns
+									</summary>
+									<dl className="mt-2 space-y-1">
+										{item.product.columns.map(
+											(val, idx) => (
+												<div
+													key={idx}
+													className="flex justify-between gap-2"
+												>
+													<dt className="text-gray-500">
+														{COLUMN_LABELS[idx] ??
+															`Col ${idx + 1}`}
+													</dt>
+													<dd className="text-right">
+														{val || "-"}
+													</dd>
+												</div>
+											)
+										)}
+									</dl>
+								</details>
+							</article>
+						);
+					})}
+				</main>
+			</div>
 		</div>
 	);
 }
